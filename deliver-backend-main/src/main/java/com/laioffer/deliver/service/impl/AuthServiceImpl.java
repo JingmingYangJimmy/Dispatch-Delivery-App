@@ -15,6 +15,7 @@ import com.laioffer.deliver.service.AuthService;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -64,7 +65,8 @@ public class AuthServiceImpl implements AuthService {
 
         var user = userRepository.findByEmail(email);
         if (user == null || !passwordEncoder.matches(req.password(), user.password())) {
-            throw new BusinessException("BAD_CREDENTIALS", "邮箱或密码错误");
+            throw new BusinessException("BAD_CREDENTIALS", "Email or password is incorrect", HttpStatus.UNAUTHORIZED);
+
         }
 
         long ver = tokenVersionStore.getCurrentVersion(user.id());
@@ -87,30 +89,30 @@ public class AuthServiceImpl implements AuthService {
     public TokenResponse refresh(RefreshRequest req) {
         String refreshToken = req.refreshToken();
         if (refreshToken == null || refreshToken.isBlank()) {
-            throw new BusinessException("INVALID_TOKEN", "刷新令牌不能为空");
+            throw new BusinessException("INVALID_TOKEN", "Refresh token must not be empty", HttpStatus.UNAUTHORIZED);
         }
 
         Jws<Claims> jws = jwtService.parse(refreshToken);
         Claims claims = jws.getBody();
 
         if (!"refresh".equals(claims.get("type"))) {
-            throw new BusinessException("INVALID_TOKEN", "非法刷新令牌");
+            throw new BusinessException("INVALID_TOKEN", "Illegal refresh token", HttpStatus.UNAUTHORIZED);
         }
 
         long userId;
         try {
             userId = Long.parseLong(claims.getSubject());
         } catch (NumberFormatException e) {
-            throw new BusinessException("INVALID_TOKEN", "刷新令牌用户标识错误");
+            throw new BusinessException("INVALID_TOKEN", "Refresh token user identifier is invalid", HttpStatus.UNAUTHORIZED);
         }
 
         String oldSid = (String) claims.get("sid");
         if (oldSid == null || oldSid.isBlank()) {
-            throw new BusinessException("INVALID_TOKEN", "刷新令牌缺少会话标识");
+            throw new BusinessException("INVALID_TOKEN", "Refresh token missing session identifier", HttpStatus.UNAUTHORIZED);
         }
 
         if (!sessionStore.isRefreshValid(userId, oldSid, refreshToken)) {
-            throw new BusinessException("INVALID_TOKEN", "刷新令牌已失效");
+            throw new BusinessException("TOKEN_EXPIRED", "Refresh token has expired", HttpStatus.UNAUTHORIZED);
         }
 
         // 轮换会话
@@ -121,7 +123,7 @@ public class AuthServiceImpl implements AuthService {
 
         // 重签发 access
         var u = userRepository.findById(userId)
-                .orElseThrow(() -> new BusinessException("USER_NOT_FOUND", "用户不存在"));
+                .orElseThrow(() ->  new BusinessException("NOT_FOUND", "Resource not found", HttpStatus.NOT_FOUND));
         long ver = tokenVersionStore.getCurrentVersion(userId);
         List<String> authorities = permissionCache.getPermissions(userId);
 
@@ -151,7 +153,8 @@ public class AuthServiceImpl implements AuthService {
                     sessionStore.revokeBySid(sid);
                 }
             } catch (JwtException e) {
-                throw new BusinessException("LOGOUT_FAIL", "登出识别");
+                throw new BusinessException("LOGOUT_FAIL", "Logout identifier is invalid", HttpStatus.BAD_REQUEST);
+
             }
         }
     }
@@ -173,14 +176,14 @@ public class AuthServiceImpl implements AuthService {
     public void logoutAllForCurrentUser() {
         var auth = SecurityContextHolder.getContext().getAuthentication();
         if (auth == null || !auth.isAuthenticated()) {
-            throw new BusinessException("UNAUTHORIZED", "未认证");
+            throw new BusinessException("UNAUTHORIZED", "Not authenticated", HttpStatus.UNAUTHORIZED);
         }
 
         Long userId;
         try {
             userId = Long.parseLong(auth.getName()); // JWT 的 sub = userId
         } catch (NumberFormatException e) {
-            throw new BusinessException("UNAUTHORIZED", "无效的登录上下文");
+            throw new BusinessException("UNAUTHORIZED", "Invalid logout context", HttpStatus.UNAUTHORIZED);
         }
 
         // 调用上面提取的方法

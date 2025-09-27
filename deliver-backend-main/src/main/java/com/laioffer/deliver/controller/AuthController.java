@@ -10,7 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/auth")
+@RequestMapping("/api/v1/auth")
 public class AuthController {
 
     private final AuthService authService;
@@ -37,13 +37,13 @@ public class AuthController {
     }
 
     // ========= 验证码注册（演示用） =========
-    @PostMapping("/request-code")
+    @PostMapping("/signup/request-code")
     public ResponseEntity<Void> requestCode(@RequestParam("email") String email) {
         registrationService.requestSignUpCode(email);
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/signup")
+    @PostMapping("/signup/confirm")
     public ResponseEntity<Long> signup(@RequestBody @Valid RegisterBody body,
                                        @RequestParam("code") String code) {
         Long userId = registrationService.register(body, code);
@@ -51,13 +51,13 @@ public class AuthController {
     }
 
     // ========= 邀请式注册 =========
-    @PostMapping("/invite")
+    @PostMapping("/invite/request-code")
     public ResponseEntity<Void> invite(@RequestBody @Valid InviteCreateBody body) {
         inviteService.createInvite(body.email(), body.role());
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping("/accept-invite")
+    @PostMapping("/invite/confirm")
     public ResponseEntity<Long> acceptInvite(@RequestParam("token") String token,
                                              @RequestBody @Valid RegisterBody body) {
         Long userId = inviteService.acceptInvite(token, body);

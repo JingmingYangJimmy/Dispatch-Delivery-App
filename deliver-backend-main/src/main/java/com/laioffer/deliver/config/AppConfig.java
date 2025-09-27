@@ -52,11 +52,11 @@ public class AppConfig {
                 .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
                 .authorizeHttpRequests(auth -> auth
                         // 放行公开接口
-                        .requestMatchers("/auth/request-code", "/auth/signup", "/auth/accept-invite").permitAll()
-                        .requestMatchers("/auth/login", "/auth/refresh","auth/logout").permitAll()
+                        .requestMatchers("/api/v1/auth/signup/request-code", "/api/v1/auth/signup/confirm", "/api/v1/auth/invite/confirm").permitAll()
+                        .requestMatchers("/api/v1/auth/login", "/api/v1/auth/refresh","/api/v1/auth/logout").permitAll()
                         // 受权接口
-                        .requestMatchers(HttpMethod.POST, "/auth/invite").hasAuthority("INVITE_CREATE")
-                        .requestMatchers(HttpMethod.POST, "/auth/logout-all").hasAuthority("SESSION_REVOKE_ALL")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/invite/request-code").hasAuthority("INVITE_CREATE")
+                        .requestMatchers(HttpMethod.POST, "/api/v1/auth/logout-all").hasAuthority("SESSION_REVOKE_ALL")
                         // 文档接口
                         .requestMatchers(
                                 "/v3/api-docs/**",

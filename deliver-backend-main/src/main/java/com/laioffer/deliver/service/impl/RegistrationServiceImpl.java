@@ -11,6 +11,7 @@ import com.laioffer.deliver.service.EmailSender;
 import com.laioffer.deliver.service.RegistrationService;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -53,7 +54,8 @@ public class RegistrationServiceImpl implements RegistrationService {
         String email = emailRaw.trim().toLowerCase(Locale.ROOT);
 
         if (userRepository.existsByEmail(email)) {
-            throw new BusinessException("EMAIL_ALREADY_REGISTERED", "该邮箱已注册");
+            throw new BusinessException("EMAIL_ALREADY_REGISTERED", "This email is already registered", HttpStatus.CONFLICT);
+
         }
 
         String code = String.format("%06d", random.nextInt(1_000_000));
@@ -71,11 +73,11 @@ public class RegistrationServiceImpl implements RegistrationService {
 
         String cached = emailCodeCache.get(email, String.class);
         if (cached == null || !cached.equals(code)) {
-            throw new BusinessException("EMAIL_CODE_INVALID", "验证码错误或已过期");
+            throw new BusinessException("EMAIL_CODE_INVALID", "Verification code is invalid or expired", HttpStatus.BAD_REQUEST);
         }
 
         if (userRepository.existsByEmail(email)) {
-            throw new BusinessException("EMAIL_ALREADY_REGISTERED", "该邮箱已注册");
+            throw new BusinessException("EMAIL_ALREADY_REGISTERED", "This email is already registered", HttpStatus.CONFLICT);
         }
 
         // users 表要求 role/status/OffsetDateTime
@@ -99,7 +101,7 @@ public class RegistrationServiceImpl implements RegistrationService {
         // user_roles 绑定角色：优先用 findIdByCode
         Long roleId = roleRepository.findIdByCode("CUSTOMER");
         if (roleId == null) {
-            throw new BusinessException("ROLE_NOT_FOUND", "默认角色缺失：CUSTOMER");
+            throw new BusinessException("ROLE_NOT_FOUND", "Default role missing: CUSTOMER", HttpStatus.NOT_FOUND);
         }
 
         // UserRoleEntity(id, userId, roleId, hubId)

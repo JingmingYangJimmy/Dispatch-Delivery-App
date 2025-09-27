@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jws;
 import io.jsonwebtoken.JwtException;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -60,7 +61,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
         String token = authz.substring(7).trim();
         if (token.isEmpty()) {
-            throw new BusinessException("TOKEN_INVALID", "访问令牌无效");
+            throw new BusinessException("TOKEN_INVALID", "Access token is invalid", HttpStatus.UNAUTHORIZED);
         }
 
         try {
@@ -70,50 +71,50 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             Object type = claims.get("type");
             if (type == null || !"access".equals(type.toString())) {
-                throw new BusinessException("TOKEN_INVALID", "非法访问令牌");
+                throw new BusinessException("TOKEN_INVALID", "Illegal access token", HttpStatus.UNAUTHORIZED);
             }
 
             Date exp = claims.getExpiration();
             if (exp == null || exp.before(new Date())) {
-                throw new BusinessException("TOKEN_EXPIRED", "访问令牌已过期");
+                throw new BusinessException("TOKEN_EXPIRED", "Access token has expired", HttpStatus.UNAUTHORIZED);
             }
 
             String sub = claims.getSubject();
             if (sub == null || sub.isBlank()) {
-                throw new BusinessException("TOKEN_INVALID", "令牌缺少用户标识");
+                throw new BusinessException("TOKEN_INVALID", "Token missing user identifier", HttpStatus.UNAUTHORIZED);
             }
             long userId;
             try {
                 userId = Long.parseLong(sub);
             } catch (NumberFormatException nfe) {
-                throw new BusinessException("TOKEN_INVALID", "令牌用户标识无效");
+                throw new BusinessException("TOKEN_INVALID", "Token user identifier is invalid", HttpStatus.UNAUTHORIZED);
             }
 
             Object verObj = claims.get("ver");
             if (verObj == null) {
-                throw new BusinessException("TOKEN_INVALID", "令牌缺少版本字段");
+                throw new BusinessException("TOKEN_INVALID", "Token missing version field", HttpStatus.UNAUTHORIZED);
             }
             long tokenVer;
             try {
                 tokenVer = ((Number) verObj).longValue();
             } catch (ClassCastException cce) {
-                throw new BusinessException("TOKEN_INVALID", "令牌版本字段类型错误");
+                throw new BusinessException("TOKEN_INVALID", "Token version field type is wrong", HttpStatus.UNAUTHORIZED);
             }
 
             String sid = (String) claims.get("sid");
             if (sid == null || sid.isBlank()) {
-                throw new BusinessException("TOKEN_INVALID", "令牌缺少会话标识");
+                throw new BusinessException("TOKEN_INVALID", "Token missing session identifier", HttpStatus.UNAUTHORIZED);
             }
 
             // 4) 版本号校验（权限变更 / 登出全部）
             long currentVer = tokenVersionStore.getCurrentVersion(userId);
             if (tokenVer < currentVer) {
-                throw new BusinessException("TOKEN_VERSION_OUTDATED", "令牌版本已过期，请重新登录");
+                throw new BusinessException("TOKEN_VERSION_OUTDATED", "Token version is outdated, please log in again", HttpStatus.UNAUTHORIZED);
             }
 
             // 5) 黑名单校验（登出当前设备）
             if (sidBlacklistStore.isRevoked(sid)) {
-                throw new BusinessException("SESSION_REVOKED", "会话已登出，请重新登录");
+                throw new BusinessException("SESSION_REVOKED", "Session has been revoked, please log in again", HttpStatus.UNAUTHORIZED);
             }
 
             // 6) 构建 Authentication，写入上下文
@@ -140,7 +141,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             throw be;
         } catch (JwtException | IllegalArgumentException e) {
             // JJWT 解析/验签失败等
-            throw new BusinessException("TOKEN_INVALID", "访问令牌无效");
+            throw new BusinessException("TOKEN_INVALID", "Access token is invalid", HttpStatus.UNAUTHORIZED);
         }
     }
 

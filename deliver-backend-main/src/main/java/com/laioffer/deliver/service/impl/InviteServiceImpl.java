@@ -12,6 +12,7 @@ import com.laioffer.deliver.service.InviteService;
 import com.laioffer.deliver.service.EmailSender;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
+import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -57,12 +58,12 @@ public class InviteServiceImpl implements InviteService {
         String roleCode = roleCodeRaw.trim().toUpperCase(Locale.ROOT);
 
         if (userRepository.existsByEmail(email)) {
-            throw new BusinessException("EMAIL_ALREADY_REGISTERED", "该邮箱已注册");
+            throw new BusinessException("EMAIL_ALREADY_REGISTERED", "This email is already registered", HttpStatus.CONFLICT);
         }
 
         Long roleId = roleRepository.findIdByCode(roleCode);
         if (roleId == null) {
-            throw new BusinessException("ROLE_NOT_FOUND", "角色不存在：" + roleCode);
+            throw new BusinessException("ROLE_NOT_FOUND", "Role not found: " + roleCode, HttpStatus.NOT_FOUND);
         }
 
         String token = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
@@ -84,16 +85,16 @@ public class InviteServiceImpl implements InviteService {
     @Override
     public Long acceptInvite(String token, RegisterBody body) {
         if (token == null || token.isBlank()) {
-            throw new BusinessException("INVITE_INVALID", "邀请码无效");
+            throw new BusinessException("INVITE_INVALID", "Invitation code is invalid", HttpStatus.BAD_REQUEST);
         }
 
         InviteCacheValue val = inviteCache.get(token, InviteCacheValue.class);
         if (val == null) {
-            throw new BusinessException("INVITE_EXPIRED", "邀请码不存在或已过期");
+            throw new BusinessException("INVITE_EXPIRED", "Invitation code does not exist or has expired", HttpStatus.GONE);
         }
 
         if (userRepository.existsByEmail(val.email())) {
-            throw new BusinessException("EMAIL_ALREADY_REGISTERED", "该邮箱已注册");
+            throw new BusinessException("EMAIL_ALREADY_REGISTERED", "This email is already registered", HttpStatus.CONFLICT);
         }
 
         // 为了写 users.role，取出角色 code（可选）
@@ -120,7 +121,7 @@ public class InviteServiceImpl implements InviteService {
 
         RoleEntity role = roleRepository.findByCode("CUSTOMER");
         if (role == null) {
-            throw new BusinessException("ROLE_NOT_FOUND", "默认角色缺失: CUSTOMER");
+            throw new BusinessException("ROLE_NOT_FOUND", "Default role missing: CUSTOMER", HttpStatus.NOT_FOUND);
         }
         Long userId = userRepository.save(newUser).id();
 
