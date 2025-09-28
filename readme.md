@@ -1,1 +1,2 @@
+最简单版本：没有GoogleMapService接入，因此不能获取纽约市道路情况（后续会加上）
 注意：application.properties中的url、username和password要根据实际情况修改
