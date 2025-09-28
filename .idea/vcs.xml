@@ -3,6 +3,6 @@
   <component name="VcsDirectoryMappings">
     <mapping directory="$PROJECT_DIR$" vcs="Git" />
     <mapping directory="$PROJECT_DIR$/Dispatch-Delivery-App" vcs="Git" />
-    <mapping directory="$PROJECT_DIR$/routeplanning(without GoogleMapService)" vcs="Git" />
+    <mapping directory="$PROJECT_DIR$/routeplanning_no_GoogleMapService" vcs="Git" />
   </component>
 </project>
