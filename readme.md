@@ -1,0 +1,1 @@
+注意：application.properties中的url、username和password要根据实际情况修改
