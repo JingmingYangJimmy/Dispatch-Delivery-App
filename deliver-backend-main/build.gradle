@@ -1,0 +1,64 @@
+plugins {
+    id 'java'
+    id 'org.springframework.boot' version '3.3.3'
+    id 'io.spring.dependency-management' version '1.1.5'
+}
+
+group = 'com.laioffer'
+version = '0.0.1-SNAPSHOT'
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(21) } // 若本机是 17 就改成 17
+}
+
+repositories { mavenCentral() }
+
+dependencies {
+    // ===== Spring 栈（交给 Boot 统一版本，避免 5.x/6.x 混用）=====
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jdbc'
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+    implementation 'org.springframework.boot:spring-boot-starter-validation' // @Valid / jakarta.validation
+
+    // ===== 缓存实现 =====
+    implementation 'com.github.ben-manes.caffeine:caffeine:3.1.8' // PermissionCacheSpring 用得到
+
+    // ===== OpenAPI / Swagger（Boot 3 / Spring 6 适配）=====
+    implementation 'org.springdoc:springdoc-openapi-starter-webmvc-ui:2.6.0'
+    // 若你需要 /doc.html（Knife4j UI），请使用 jakarta 版（兼容 springdoc），否则不要加：
+    // implementation 'com.github.xiaoymin:knife4j-openapi3-jakarta-spring-boot-starter:4.5.0'
+
+    // ===== JWT（JJWT 官方组合，JDK 17/21 友好）=====
+    implementation 'io.jsonwebtoken:jjwt-api:0.11.5'
+    runtimeOnly   'io.jsonwebtoken:jjwt-impl:0.11.5'
+    runtimeOnly   'io.jsonwebtoken:jjwt-jackson:0.11.5'
+
+    // ===== 数据库驱动（按你实际使用选择其一）=====
+    implementation 'org.postgresql:postgresql:42.7.4'  // 你项目记载一直在用 PostgreSQL
+    // runtimeOnly 'com.mysql:mysql-connector-j:9.0.0'
+    // runtimeOnly 'com.h2database:h2:2.2.224'       // 如果本地想用 H2 内存库
+
+    // ===== 常见工具（可选）=====
+    compileOnly 'org.projectlombok:lombok:1.18.32'
+    annotationProcessor 'org.projectlombok:lombok:1.18.32'
+    // 如果你有 @ConfigurationProperties 需要提示：
+    // annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+}
+
+/*
+ * 重要：移除/避免以下旧依赖（容易把 Spring 5 拉进来，触发 NoSuchMethodError）：
+ * - 所有 springfox：springfox-boot-starter、springfox-swagger2、springfox-swagger-ui ...
+ * - 旧 Knife4j（非 jakarta 的 3.x/2.x）
+ * - 自己手写的 org.springframework:spring-web / spring-webmvc / spring-context 等明确版本依赖
+ *
+ * 如果某些三方库硬性带入了 Spring 5.x，请按如下方式排除：
+ *
+ * implementation('some:lib:1.2.3') {
+ *     exclude group: 'org.springframework', module: 'spring-web'
+ *     exclude group: 'org.springframework', module: 'spring-webmvc'
+ * }
+ */

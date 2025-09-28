@@ -1,0 +1,70 @@
+app:
+  signup:
+    code-ttl-minutes: 10     # 验证码有效期
+    max-attempts: 5          # 最大尝试次数
+  invite:
+    ttl-hours: 24
+  email:
+    from: laioffer.deliver.test@gmail.com
+    fail-on-error: true
+  jwt:
+    issuer: deliver-demo
+    secret: "please-change-this-to-a-long-random-secret"
+    access-ttl-minutes: 15
+    refresh-ttl-days: 14
+
+
+spring:
+  jackson:
+    default-property-inclusion: non_null
+    property-naming-strategy: LOWER_CAMEL_CASE
+  datasource:
+    url: jdbc:postgresql://${DATABASE_URL:localhost}:${DATABASE_PORT:5432}/deliver
+    username: ${DATABASE_USERNAME:deliver}
+    password: ${DATABASE_PASSWORD:secret}
+    driver-class-name: org.postgresql.Driver
+  sql:
+    init:
+      mode: ${INIT_DB:always}
+      schema-locations: "classpath:database-init.sql"
+  cache:
+    caffeine:
+      spec: expireAfterWrite=60s
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: ${MAIL_USERNAME:}
+    password: ${MAIL_PASSWORD:}
+    properties:
+      mail.smtp.auth: true
+      mail.smtp.starttls.enable: true
+      mail.smtp.connectiontimeout: 5000
+      mail.smtp.timeout: 5000
+      mail.smtp.writetimeout: 5000
+
+
+logging:
+  level:
+    org.apache.coyote.http11.Http11InputBuffer: TRACE # Incoming HTTP requests
+    org.springframework.jdbc.datasource.init: DEBUG
+    org.springframework.jdbc.core: DEBUG # SQL
+    org.springframework.security: DEBUG
+    org.springdoc: DEBUG
+    org.springdoc.api: DEBUG
+    org.springframework.web: DEBUG
+
+    #ewfn savh vtbo yixj
+
+springdoc:
+  api-docs:
+    enabled: true
+  swagger-ui:
+    enabled: true
+    path: /swagger-ui/index.html
+  # ✅ 仅扫描你的控制器包，避免实体/配置类被错误解析
+  packages-to-scan: com.laioffer.deliver.controller
+  # （可选）只导出你关心的路径，进一步减小扫描面
+  # paths-to-match: /auth/**,/api/**
+
+  # ✅ 遇到无法解析/循环引用的 schema，直接移除，避免 500
+  remove-broken-reference-definitions: true
