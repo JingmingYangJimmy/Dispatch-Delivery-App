@@ -47,6 +47,26 @@ dependencies {
     // annotationProcessor 'org.springframework.boot:spring-boot-configuration-processor'
 
     testImplementation 'org.springframework.boot:spring-boot-starter-test'
+
+    // Spring Boot
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+
+    // PostgreSQL
+    implementation 'org.postgresql:postgresql:42.6.0'
+
+    // Google Maps
+    implementation 'com.google.maps:google-maps-services:2.2.0'
+
+    // Cache
+    implementation 'org.springframework.boot:spring-boot-starter-cache'
+
+    // Lombok (optional, for cleaner code)
+    compileOnly 'org.projectlombok:lombok'
+    annotationProcessor 'org.projectlombok:lombok'
+
+    // Testing
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
 }
 
 /*
